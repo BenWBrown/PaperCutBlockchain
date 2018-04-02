@@ -1,0 +1,22 @@
+{
+  "name": "PaperCutUserClient",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "ajv": "^6.0.0",
+    "drizzle": "^1.1.0",
+    "drizzle-react": "^1.1.0",
+    "prop-types": "^15.6.0",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-scripts": "1.1.0",
+    "redux": "^3.7.2",
+    "styled-components": "^3.0.2",
+    "web3": "1.0.0-beta.33"
+  },
+  "scripts": {
+    "start": "react-scripts start"
+  },
+  "author": "Ben Brown <bwbrown@middlebury.edu>",
+  "license": "Apache-2.0"
+}
