@@ -1,0 +1,13 @@
+{
+  "name": "PaperCutPrinterClient",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "express": "^4.16.0"
+  },
+  "scripts": {
+    "start": "truffle exec App.js"
+  },
+  "author": "Ben Brown <bwbrown@middlebury.edu>",
+  "license": "Apache-2.0"
+}
