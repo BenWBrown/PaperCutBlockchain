@@ -81,15 +81,12 @@ class ContentArea extends Component {
       //   console.log('result: ', result);
       // })
 
-      //now, send MetaCoins from one acc to another
-      console.log(Papercut);
+      //now, send MetaCoins from one acc to anothers
       const contract = new web3.eth.Contract(Papercut.abi, contractAddress);
-      console.log(contract);
-      console.log
-      console.log(contract);
+
       contract.methods.sendCoin(acc2, 10).send({from: acc1, gas: '35938'}).then(result => {
-        console.log('transaction 2');
-        console.log('result: ', result);
+        // console.log('transaction 2');
+        // console.log('result: ', result);
       }).catch(e => {
         console.log(e);
       })
