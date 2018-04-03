@@ -11,12 +11,12 @@ module.exports = function(callback) {
     // If this callback is called, the call was successfully executed.
     // Note that this returns immediately without any waiting.
     // Let's print the return value.
-    console.log('acc1 balance:', balance.toNumber());
+    console.log('acc1 balance:', balance.toString());
   }).then(() => {
     console.log('making acc2 request');
     return meta.getBalance.call(account_two, {from: account_two});
   }).then(balance => {
-    console.log('acc2 balance:', balance.toNumber());
+    console.log('acc2 balance:', balance.toString());
   }).catch(function(e) {
     // There was an error! Handle it.
   })
