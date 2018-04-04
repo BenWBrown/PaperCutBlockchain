@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 contract Papercut {
   mapping (address => uint256) balances;
   mapping (address => uint256) withheldMoney;
-  mapping (address => uint256) fileHashes; //TODO: MAKE THIS MAP TO AN ARRAY
+  mapping (uint256 => address) fileUsers; //TODO: MAKE THIS MAP TO AN ARRAY
   mapping (uint256 => uint256) filecosts;
   address owner;
 
@@ -27,19 +27,18 @@ contract Papercut {
 
   /* a user requests that a given file hash be printed */
   function userPrintRequest(uint256 filehash) public {
-    fileHashes[msg.sender] = filehash;
+    fileUsers[filehash] = msg.sender;
   }
 
-  function testApprove() public {
-    ApprovePrint(1234, 4567, 3);
-  }
+  //TODO: RESOLVE A RACE CONDITION BETWEEN THE ABOVE AND BELOW FUNCTIONS
 
   function printerPrintRequest(address user, uint256 filehash, uint256 cost) public {
-    if (fileHashes[user] != filehash) { //if the user has not requested this file to be printed, stop.
+    //TODO EMIT FAIL EVENTS ON EARLY EXIT
+    if (fileUsers[filehash] != user) { //if the user has not requested this file to be printed, stop.
       return;
     }
     if (balances[user] < cost) { //if the user does not have enough money to print, clear filehash and stop.
-      fileHashes[user] = 0;
+      //TODO: remove file from fileUsers?
       return;
     }
     filecosts[filehash] = cost;

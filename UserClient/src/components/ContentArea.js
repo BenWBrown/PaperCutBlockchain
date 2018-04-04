@@ -27,12 +27,12 @@ class ContentArea extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      addresstext: '0x0', // text in input element
+      addresstext: '0x627306090abab3a6e1400e9345bc60c78a8bef57', // text in input element
       userAddress: '0x0', // actual user address (set with button)
       //TODO: have some sort of login?
       userBalance: 0,
       file: "",
-      filehash: "0x123456",
+      // filehash: "0x123456",
       pages: 3,
     }
     this.contract = new web3.eth.Contract(Papercut.abi, contractAddress);
@@ -46,7 +46,14 @@ class ContentArea extends Component {
       .then(text => console.log(text));
 
     this.contract.events.ApprovePrint({}, (error, result) => {
-      console.log(error);
+      console.log('PRINT APPROVED. UPDATE UI');
+      if (error) console.log(error);
+      console.log(result);
+    });
+
+    this.contract.events.AnnoucePrintCode({}, (error, result) => {
+      console.log('PRINT CODE ANNOUNCED');
+      if (error) console.log(error);
       console.log(result);
     });
 
@@ -65,6 +72,14 @@ class ContentArea extends Component {
 
 
   initiatePrint() {
+      const filehash = sha256(fileData);
+      console.log(filehash);
+      this.contract.methods.userPrintRequest(filehash).send({from: this.state.userAddress, gas: '359380'})
+        .then(result => {
+          console.log('user successfully uploaded filehash', result);
+        })
+
+
     const fileData = 'BINARY FILE DATA'; //TODO: actually get file data lol
     const request = new Request(serverLocation + 'print', {
       method: 'POST',
@@ -82,12 +97,6 @@ class ContentArea extends Component {
       if (false) {
         throw 'error in sending file to server';
       }
-    }).then(() => {
-      const filehash = sha256(fileData);
-      return this.contract.methods.userPrintRequest(filehash)
-        .send({from: this.state.userAddress, gas: '359380'});
-    }).then(result => {
-      console.log('result', result);
     })
     .catch(error => {
       console.log(error);
