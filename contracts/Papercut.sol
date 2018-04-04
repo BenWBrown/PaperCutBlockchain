@@ -12,6 +12,7 @@ contract Papercut {
 
   event ApprovePrint(address indexed user, uint256 filehash, uint256 cost);
   event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 printcode);
+  //event AcknowledgeUserPrintRequest()
   /* event DisaprrovePrint(); */  //do i need this?
 
   function Papercut() public {
@@ -25,12 +26,11 @@ contract Papercut {
     balances[msg.sender] +=  msg.value * 385; // 1 eth = $384.68 as of writing this.
   }
 
-  /* a user requests that a given file hash be printed */
+  /* a user requests that a given file hash be printed
+   * they must always call this function before sending the file to the printer */
   function userPrintRequest(uint256 filehash) public {
     fileUsers[filehash] = msg.sender;
   }
-
-  //TODO: RESOLVE A RACE CONDITION BETWEEN THE ABOVE AND BELOW FUNCTIONS
 
   function printerPrintRequest(address user, uint256 filehash, uint256 cost) public {
     //TODO EMIT FAIL EVENTS ON EARLY EXIT

@@ -79,38 +79,31 @@ class ContentArea extends Component {
     //first, hash the file we're sending
     const fileData = this.state.file;
     sha256(fileData).then(filehash => {
-
       //send a print request to the smart contract
-      this.contract.methods.userPrintRequest(filehash).send({from: this.state.userAddress, gas: '359380'})
-        .then(result => {
-          console.log('user successfully uploaded filehash', result);
-        }).catch(error => {
-          console.log('error uploading filehash to smart contract', error);
+      this.contract.methods.userPrintRequest(filehash).send({from: this.state.userAddress, gas: '359380'}).then(result => {
+        console.log('result from user print request', result);
+        //send the file to the printer
+        const request = new Request(serverLocation + 'print', {
+          method: 'POST',
+          body: JSON.stringify({
+            user: this.state.userAddress,
+            file: fileData
+          }),
+          headers: new Headers({ 'Content-type': 'application/json' }),
         });
 
-      //send the file to the printer
-      const request = new Request(serverLocation + 'print', {
-        method: 'POST',
-        body: JSON.stringify({
-          user: this.state.userAddress,
-          file: fileData
-        }),
-        headers: new Headers({ 'Content-type': 'application/json' }),
-      });
-
-      fetch(request).then(response => {
-        return response.text();
-      }).then(text => {
-        console.log('server resonse', text);
-        if (false) {
-          throw 'error in sending file to server';
-        }
+        fetch(request).then(response => {
+          return response.text();
+        }).then(text => {
+          console.log('server resonse to file', text);
+        }).catch(error => {
+          console.log('error sending file to server', error);
+        });
       }).catch(error => {
-        console.log(error);
+        console.log('error', error);
       });
-    })
-    .catch(error => {
-      console.log('error', error);
+    }).catch(error => {
+      console.log('error hashing data, this should never happen', error);
     });
 
   }
