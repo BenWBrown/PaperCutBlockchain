@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
-import Papercut from '../Papercut.json'
+import Papercut from '../Papercut.json';
+import EthCrypto from 'eth-crypto';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
@@ -42,8 +43,9 @@ class ContentArea extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      addresstext: '0x627306090abab3a6e1400e9345bc60c78a8bef57', // text in input element
       userAddress: '0x0', // actual user address (set with button)
+      privKey: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3',
+      pubKey: '0x0',
       //TODO: have some sort of login?
       userBalance: 0,
       file: "",
@@ -108,13 +110,12 @@ class ContentArea extends Component {
 
   }
 
-  setAddress() {
-    this.setState({
-      userAddress: this.state.addresstext,
-      userBalance: "Loading...",
-    });
-    this.contract.methods.getBalance(this.state.addresstext)
-      .call({from: this.state.addresstext, gas: '359380'})
+  setPrivKey() {
+    const pubKey = EthCrypto.publicKeyByPrivateKey(this.state.privKey);
+    const userAddress = EthCrypto.addressByPublicKey(pubKey);
+    this.setState({pubKey, userAddress, userBalance: 'Loading...'});
+    this.contract.methods.getBalance(userAddress)
+      .call({from: userAddress, gas: '359380'})
       .then(result => {
         const balance = parseInt(result);
         this.setState({userBalance: balance});
@@ -123,38 +124,30 @@ class ContentArea extends Component {
       });
   }
 
+  setAddress() {
+
+  }
+
   onAddressChange(e) {
     this.setState({addresstext: e.target.value});
+  }
+
+  onPrivKeyChange(e) {
+    this.setState({privKey: e.target.value});
   }
 
   onFileNameChange(e) {
     this.setState({file: e.target.value});
   }
 
-  sendMoney() {
-      const acc1 = "0x627306090abaB3A6e1400e9345bC60c78a8BEf57";
-      const acc2 = "0xf17f52151EbEF6C7334FAD080c5704D77216b732";
-      const contractAddress = "0x345ca3e014aaf5dca488057592ee47305d9b3e10";
-
-
-      //now, send MetaCoins from one acc to anothers
-      const contract = new web3.eth.Contract(Papercut.abi, contractAddress);
-
-      contract.methods.sendCoin(acc2, 10).send({from: acc1, gas: '35938'}).then(result => {
-        // console.log('transaction 2');
-        // console.log('result: ', result);
-      }).catch(e => {
-        console.log(e);
-      })
-  }
 
   render() {
     const balance = this.state.userBalance.toFixed ? (this.state.userBalance / 1e18).toFixed(2) : this.state.userBalance;
     return(
       <div>
         <p>Content Area</p>
-        <input type='text' onChange={(e) => this.onAddressChange(e)} value={this.state.addresstext}></input>
-        <button onClick={() => this.setAddress()}>Set Address</button>
+        <input type='text' onChange={(e) => this.onPrivKeyChange(e)} value={this.state.privKey}></input>
+        <button onClick={() => this.setPrivKey()}>Set Private Key</button>
         <br/>
         <p>{'Address: ' + this.state.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
