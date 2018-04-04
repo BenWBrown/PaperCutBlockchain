@@ -1,17 +1,23 @@
 pragma solidity ^0.4.18;
 
 contract Papercut {
-  // to wire everything together, currently copying the Metacoin contract
-  mapping (address => uint) balances;
+  mapping (address => uint256) balances;
+  mapping (address => uint256) withheldMoney;
+  mapping (address => uint256) fileHashes; //TODO: MAKE THIS MAP TO AN ARRAY
+  mapping (uint256 => uint256) filecosts;
   address owner;
 
-  event Print(address indexed _from, uint256 indexed _filehash, uint8 pages);
-  event PrintingCode(address indexed _user, uint64 printcode);
-  /* event Transfer(address indexed _from, address indexed _to, uint256 _value); */
+  /* event Print(address indexed _from, uint8 pages, uint256 indexed _filehash, uint256 userBalance);
+  event PrintingCode(address indexed _user, uint64 printcode); */
+
+  event ApprovePrint(address indexed user, uint256 filehash, uint256 cost);
+  event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 printcode);
+  /* event DisaprrovePrint(); */  //do i need this?
 
   function Papercut() public {
     owner = tx.origin;
-    /* balances[tx.origin] = 10000; */
+
+    balances[tx.origin] = 1 ether * 385; //TODO: REMOVE THIS
   }
 
   function addValue() public payable {
@@ -19,20 +25,52 @@ contract Papercut {
     balances[msg.sender] +=  msg.value * 385; // 1 eth = $384.68 as of writing this.
   }
 
-  function print(uint8 pages, uint256 filehash) public returns(bool sufficient) {
+  /* a user requests that a given file hash be printed */
+  function userPrintRequest(uint256 filehash) public {
+    fileHashes[msg.sender] = filehash;
+  }
+
+  function testApprove() public {
+    ApprovePrint(1234, 4567, 3);
+  }
+
+  function printerPrintRequest(address user, uint256 filehash, uint256 cost) public {
+    if (fileHashes[user] != filehash) { //if the user has not requested this file to be printed, stop.
+      return;
+    }
+    if (balances[user] < cost) { //if the user does not have enough money to print, clear filehash and stop.
+      fileHashes[user] = 0;
+      return;
+    }
+    filecosts[filehash] = cost;
+    balances[user] -= cost; //decrement their balance
+    withheldMoney[user] += cost; //but withhold that money for now, we may give it back if nothing is printed
+    ApprovePrint(user, filehash, cost);
+  }
+
+  function printerAnnouceCode(address user, uint256 filehash, uint256 printcode) public {
+    uint256 cost = filecosts[filehash];
+    withheldMoney[user] -= cost;
+    AnnoucePrintCode(user, filehash, printcode);
+  }
+
+
+  /* function print(uint8 pages, uint256 filehash) public returns(bool sufficient, uint256 balance) {
     //TODO: MORE COMPLEX price computation. for now, 5 cents a page
+    //TODO: log request? does this with Print event i guess
     uint price = pages * 5 * 1 ether / 385;
     if (balances[msg.sender] < price) {
-      return false;
+      return (false, balances[msg.sender]);
     }
     balances[msg.sender] -= price;
-    Print(msg.sender, filehash, pages);
+    Print(msg.sender, pages, filehash, balances[msg.sender]);
+    return (true, balances[msg.sender]);
   }
 
   function distributeCode(address user, uint64 printcode) public {
     //TODO: think about whtether this can go straight from printer to user
     PrintingCode(user, printcode);
-  }
+  } */
 
   /* function sendCoin(address receiver, uint amount) public returns(bool sufficient) {
     if (balances[msg.sender] < amount) return false;
