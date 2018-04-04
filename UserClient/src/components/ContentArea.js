@@ -11,13 +11,28 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.WebsocketProvider("ws://localhost:8546"));
 }
 
+const crypto = window.crypto || window.msCrypto; // for IE 11
+const subtleCrypto = crypto.webkitSubtle || crypto.subtle;
+
 
 const serverLocation = 'http://localhost:5555/';
 const contractAddress = "0x345ca3e014aaf5dca488057592ee47305d9b3e10"; //TODO: GET THIS OFF THE BLOCKCHAIN SOMEHOW?
 
 
-let sha256 = function sha256(data) {
-  return '1193046'; //TODO: USE A CRYPTO LIBRARY LOL
+async function sha256(message) {
+
+    // encode as UTF-8
+    const msgBuffer = new TextEncoder('utf-8').encode(message);
+
+    // hash the message
+    const hashBuffer = await subtleCrypto.digest('SHA-256', msgBuffer);
+
+    // convert ArrayBuffer to Array
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+    // convert bytes to hex string
+    const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+    return hashHex;
 }
 
 
@@ -57,50 +72,46 @@ class ContentArea extends Component {
       console.log(result);
     });
 
-    // this.contract.events.ApprovePrint().watch( (error, result) => {
-    //   console.log(error);
-    //   console.log(result);
-    // });
-
-    // fetch('/articles/')
-    //   .then(response => response.json()).then((data) => {
-    //     this.setState({ collection: data });
-    //   }).catch((error) => {
-    //     console.log('Error in fetching data', error); // eslint-disable-line no-console
-    //   });
   }
 
 
   initiatePrint() {
-      const filehash = sha256(fileData);
-      console.log(filehash);
+    //first, hash the file we're sending
+    const fileData = this.state.file;
+    sha256(fileData).then(filehash => {
+
+      //send a print request to the smart contract
       this.contract.methods.userPrintRequest(filehash).send({from: this.state.userAddress, gas: '359380'})
         .then(result => {
           console.log('user successfully uploaded filehash', result);
-        })
+        }).catch(error => {
+          console.log('error uploading filehash to smart contract', error);
+        });
 
+      //send the file to the printer
+      const request = new Request(serverLocation + 'print', {
+        method: 'POST',
+        body: JSON.stringify({
+          user: this.state.userAddress,
+          file: fileData
+        }),
+        headers: new Headers({ 'Content-type': 'application/json' }),
+      });
 
-    const fileData = 'BINARY FILE DATA'; //TODO: actually get file data lol
-    const request = new Request(serverLocation + 'print', {
-      method: 'POST',
-      body: JSON.stringify({
-        user: this.state.userAddress,
-        file: fileData
-      }),
-      headers: new Headers({ 'Content-type': 'application/json' }),
-    });
-
-    fetch(request).then(response => {
-      return response.text();
-    }).then(text => {
-      console.log(text);
-      if (false) {
-        throw 'error in sending file to server';
-      }
+      fetch(request).then(response => {
+        return response.text();
+      }).then(text => {
+        console.log('server resonse', text);
+        if (false) {
+          throw 'error in sending file to server';
+        }
+      }).catch(error => {
+        console.log(error);
+      });
     })
     .catch(error => {
-      console.log(error);
-    })
+      console.log('error', error);
+    });
 
   }
 
@@ -121,6 +132,10 @@ class ContentArea extends Component {
 
   onAddressChange(e) {
     this.setState({addresstext: e.target.value});
+  }
+
+  onFileNameChange(e) {
+    this.setState({file: e.target.value});
   }
 
   sendMoney() {
@@ -150,7 +165,7 @@ class ContentArea extends Component {
         <br/>
         <p>{'Address: ' + this.state.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
-        <input type='file'></input> //TODO: SET FILE, FILEHASH, AND PAGES STATE
+        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file}></input> //TODO: SET FILE, FILEHASH, AND PAGES STATE
         <br/>
         <button onClick={() => this.initiatePrint()}>Initiate Print</button>
       </div>

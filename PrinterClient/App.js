@@ -15,8 +15,19 @@ const unapprovedFiles = {}; // maps hashes to file data. TODO: use a database on
 const approvedFiles = {};
 let pc;
 
-let sha256 = function sha256(data) {
-  return '1193046'; //TODO: USE A CRYPTO LIBRARY LOL
+const nCrypto = require('native-crypto');
+
+async function sha256(message) {
+
+  const hash = new nCrypto.Hash('SHA256');
+  const buffer = await hash.update(message).digest();
+  // convert ArrayBuffer to Array
+  const hashArray = Array.from(new Uint8Array(buffer));
+
+  // convert bytes to hex string
+  const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+  return hashHex;
+
 }
 
 let calculateCost = function calculateCost(data) {
@@ -32,16 +43,21 @@ app.get('/', (req, res) => res.send('Hello World!'))
 
 app.post('/print', (req, res) => {
   // res.send('You are printing yaya');
-  const filehash = sha256(req.body.file);
-  const user = req.body.user;
-  unapprovedFiles[filehash] = req.body.file;
-  console.log('file recieved', user, req.body.file);
-  const cost = calculateCost(req.body.file);
+  sha256(req.body.file).then(filehash => {
+    const user = req.body.user;
+    unapprovedFiles[filehash] = req.body.file;
+    console.log('file recieved', user, req.body.file);
+    const cost = calculateCost(req.body.file);
+    console.log(filehash);
 
-  pc.printerPrintRequest(user, filehash, cost, {from: printerAddress, gas: '359380'});
+    pc.printerPrintRequest(user, '0x' + filehash, cost, {from: printerAddress, gas: '359380'});
+  }).catch(error => {
+    console.log('error in sending printerPrintRequest', error);
+  })
 });
 
 app.listen(5555, () => {
+
   Papercut.deployed().then(instance => {
 
     // set up event listener
