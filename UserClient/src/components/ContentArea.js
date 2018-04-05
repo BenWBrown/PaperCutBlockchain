@@ -84,7 +84,6 @@ class ContentArea extends Component {
       const encryptedPackage = {iv, ephemPublicKey, ciphertext, mac};
       console.log('privkey', this.state.privKey);
       console.log('package', encryptedPackage);
-      //TODO: LEFT PAD MAC, CIPHER, AND IV
       EthCrypto.decryptWithPrivateKey(this.state.privKey, encryptedPackage).then(printCode => {
         console.log('printcode', printCode);
       }).catch(e => {

@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "express": "^4.16.0",
     "cors": "^2.8.4",
     "eth-crypto": "0.4.0",
-    "native-crypto": "^1.8.1"
+    "express": "^4.16.0",
+    "native-crypto": "^1.8.1",
+    "secure-random": "^1.1.1"
   },
   "scripts": {
     "start": "truffle exec App.js"

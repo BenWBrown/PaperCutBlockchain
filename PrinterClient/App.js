@@ -18,6 +18,8 @@ let pc;
 
 const nCrypto = require('native-crypto');
 const EthCrypto = require('eth-crypto');
+const secureRandom = require('secure-random');
+
 
 async function sha256(message) {
 
@@ -37,11 +39,11 @@ let calculateCost = function calculateCost(data) {
 }
 
 let generateOneTimeCode = function(args) {
+  const codeArray = secureRandom(8);
+  const oneTimeCode = codeArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
   const userAddress = args.user;
   const pubKey = pubkeys[userAddress];
-  //TODO: VERIFY THESE MATCH?
-  console.log('\npubkey', pubKey.toString(16));
-  const oneTimeCode = 'hello, world'; //TODO: generate a real one
+  //TODO: VERIFY THESE MATCH? pubkey and address
   const encryptedPackage = EthCrypto.encryptWithPublicKey(pubKey, oneTimeCode);
   console.log(encryptedPackage);
   return encryptedPackage
