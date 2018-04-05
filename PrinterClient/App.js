@@ -99,6 +99,20 @@ app.listen(5555, () => {
           ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
       });
     });
+
+    pc.NoUserRequest().watch((error, response) => {
+      console.log('no matching user request');
+      if (error) console.log(error);
+      console.log(result);
+      //TODO: DO SOMETHING ABOUT THIS
+    });
+
+    pc.InsufficientFunds().watch((error, response) => {
+      console.log('insufficient funds');
+      if (error) console.log(error);
+      console.log(result);
+      //TODO: DO SOMETHING ABOUT THIS
+    });
   });
 })
 

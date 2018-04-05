@@ -12,6 +12,8 @@ contract Papercut {
 
   event ApprovePrint(address indexed user, uint256 filehash, uint256 cost);
   event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 iv, uint256 pk1, uint256 pk2, uint256 pk3, uint256 pk4, uint256 ciphertext, uint256 mac);
+  event InsufficientFunds(address indexed user, uint256 filehash, uint256 userBalance, uint256 cost);
+  event  NoUserRequest(address indexed user, uint256 filehash);
   //event AcknowledgeUserPrintRequest()
   /* event DisaprrovePrint(); */  //do i need this?
 
@@ -33,11 +35,12 @@ contract Papercut {
   }
 
   function printerPrintRequest(address user, uint256 filehash, uint256 cost) public {
-    //TODO EMIT FAIL EVENTS ON EARLY EXIT
     if (fileUsers[filehash] != user) { //if the user has not requested this file to be printed, stop.
+      NoUserRequest(user, filehash);
       return;
     }
     if (balances[user] < cost) { //if the user does not have enough money to print, clear filehash and stop.
+      InsufficientFunds(user, filehash, balances[user], cost);
       //TODO: remove file from fileUsers?
       return;
     }

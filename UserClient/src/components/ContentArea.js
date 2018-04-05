@@ -71,8 +71,7 @@ class ContentArea extends Component {
 
     this.contract.events.AnnoucePrintCode({}, (error, result) => {
       console.log('PRINT CODE ANNOUNCED');
-      if (error) console.log(error);
-      console.log(result);
+      if (error) console.log('error', error);
       // const user = new BigNumber(result.returnValues.user).toString(16);
       // const filehash = new BigNumber(result.returnValues.filehash).toString(16);
       const iv = new BigNumber(result.returnValues.iv).toString(16).padStart(32, '0');
@@ -82,13 +81,23 @@ class ContentArea extends Component {
       const ephemPublicKey = pk.reduce(((acc, val) => acc + val), '04');
       const mac = new BigNumber(result.returnValues.mac).toString(16).padStart(64, '0');
       const encryptedPackage = {iv, ephemPublicKey, ciphertext, mac};
-      console.log('privkey', this.state.privKey);
-      console.log('package', encryptedPackage);
       EthCrypto.decryptWithPrivateKey(this.state.privKey, encryptedPackage).then(printCode => {
         console.log('printcode', printCode);
       }).catch(e => {
         console.log('error',e);
       })
+    });
+
+    this.contract.events.NoUserRequest({} (error, result) => {
+      console.log('NO USER REQUEST');
+      if (error) console.log('error', error);
+      console.log(result);
+    });
+
+    this.contract.events.InsufficientFunds({} (error, result) => {
+      console.log('INSUFFICIENT FUNDS');
+      if (error) console.log('error', error);
+      console.log(result);
     });
 
   }
