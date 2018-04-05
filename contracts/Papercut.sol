@@ -11,7 +11,7 @@ contract Papercut {
   event PrintingCode(address indexed _user, uint64 printcode); */
 
   event ApprovePrint(address indexed user, uint256 filehash, uint256 cost);
-  event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 printcode);
+  event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 iv, uint256 pk1, uint256 pk2, uint256 pk3, uint256 pk4, uint256 ciphertext, uint256 mac);
   //event AcknowledgeUserPrintRequest()
   /* event DisaprrovePrint(); */  //do i need this?
 
@@ -47,10 +47,10 @@ contract Papercut {
     ApprovePrint(user, filehash, cost);
   }
 
-  function printerAnnouceCode(address user, uint256 filehash, uint256 printcode) public {
+  function printerAnnouceCode(address user, uint256 filehash, uint256 iv, uint256 pk1, uint256 pk2, uint256 pk3, uint256 pk4, uint256 ciphertext, uint256 mac) public {
     uint256 cost = filecosts[filehash];
     withheldMoney[user] -= cost;
-    AnnoucePrintCode(user, filehash, printcode);
+    AnnoucePrintCode(user, filehash, iv, pk1, pk2, pk3, pk4, ciphertext, mac);
   }
 
 

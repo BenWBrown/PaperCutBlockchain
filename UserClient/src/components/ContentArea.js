@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import styled from 'styled-components';
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
+import {BigNumber} from 'bignumber.js';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
@@ -72,6 +73,23 @@ class ContentArea extends Component {
       console.log('PRINT CODE ANNOUNCED');
       if (error) console.log(error);
       console.log(result);
+      const user = new BigNumber(result.returnValues.user).toString(16);
+      const filehash = new BigNumber(result.returnValues.filehash).toString(16);
+      const iv = new BigNumber(result.returnValues.iv).toString(16).padStart(32, '0');
+      const ciphertext = new BigNumber(result.returnValues.ciphertext).toString(16).padStart(32, '0');
+      const pk = [result.returnValues.pk1, result.returnValues.pk2, result.returnValues.pk3, result.returnValues.pk4]
+        .map(pk => new BigNumber(pk).toString(16).padStart(32, '0'));
+      const ephemPublicKey = pk.reduce(((acc, val) => acc + val), '04');
+      const mac = new BigNumber(result.returnValues.mac).toString(16).padStart(64, '0');
+      const encryptedPackage = {iv, ephemPublicKey, ciphertext, mac};
+      console.log('privkey', this.state.privKey);
+      console.log('package', encryptedPackage);
+      //TODO: LEFT PAD MAC, CIPHER, AND IV
+      EthCrypto.decryptWithPrivateKey(this.state.privKey, encryptedPackage).then(printCode => {
+        console.log('printcode', printCode);
+      }).catch(e => {
+        console.log('error',e);
+      })
     });
 
   }

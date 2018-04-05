@@ -85,7 +85,16 @@ app.listen(5555, () => {
       generateOneTimeCode(response.args).then(encryptedPackage => {
         console.log('\nencrypted package', encryptedPackage);
         //TODO: SEND ENTIRE package
-        pc.printerAnnouceCode(response.args.user, response.args.filehash,'0x' + encryptedPackage.ciphertext);
+        const iv = '0x' + encryptedPackage.iv;
+        //the first two digits of the pubkey are alway '04' which indicate something to the ethcrypto package
+        const ephemPubKey1 = '0x' + encryptedPackage.ephemPublicKey.substring(2, 34);
+        const ephemPubKey2 = '0x' + encryptedPackage.ephemPublicKey.substring(34, 66);
+        const ephemPubKey3 = '0x' + encryptedPackage.ephemPublicKey.substring(66, 98);
+        const ephemPubKey4 = '0x' + encryptedPackage.ephemPublicKey.substring(98, 130);
+        const ciphertext = '0x' + encryptedPackage.ciphertext;
+        const mac = '0x' + encryptedPackage.mac;
+        pc.printerAnnouceCode(response.args.user, response.args.filehash, iv,
+          ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
       });
     });
   });
