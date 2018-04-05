@@ -88,13 +88,13 @@ class ContentArea extends Component {
       })
     });
 
-    this.contract.events.NoUserRequest({} (error, result) => {
+    this.contract.events.NoUserRequest({}, (error, result) => {
       console.log('NO USER REQUEST');
       if (error) console.log('error', error);
       console.log(result);
     });
 
-    this.contract.events.InsufficientFunds({} (error, result) => {
+    this.contract.events.InsufficientFunds({}, (error, result) => {
       console.log('INSUFFICIENT FUNDS');
       if (error) console.log('error', error);
       console.log(result);

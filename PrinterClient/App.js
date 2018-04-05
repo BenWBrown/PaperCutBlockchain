@@ -100,19 +100,21 @@ app.listen(5555, () => {
       });
     });
 
-    pc.NoUserRequest().watch((error, response) => {
-      console.log('no matching user request');
-      if (error) console.log(error);
-      console.log(result);
-      //TODO: DO SOMETHING ABOUT THIS
-    });
+    //TODO: WATCH ALL EVENTS
 
-    pc.InsufficientFunds().watch((error, response) => {
-      console.log('insufficient funds');
-      if (error) console.log(error);
-      console.log(result);
-      //TODO: DO SOMETHING ABOUT THIS
-    });
+    // pc.NoUserRequest().watch((error, response) => {
+    //   console.log('no matching user request');
+    //   if (error) console.log(error);
+    //   console.log(result);
+    //   //TODO: DO SOMETHING ABOUT THIS
+    // });
+    //
+    // pc.InsufficientFunds().watch((error, response) => {
+    //   console.log('insufficient funds');
+    //   if (error) console.log(error);
+    //   console.log(result);
+    //   //TODO: DO SOMETHING ABOUT THIS
+    // });
   });
 })
 
