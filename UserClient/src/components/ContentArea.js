@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import styled from 'styled-components';
+// import styled from 'styled-components';  //todo: make this look slighty nicer?
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
 import {BigNumber} from 'bignumber.js';
@@ -73,8 +73,8 @@ class ContentArea extends Component {
       console.log('PRINT CODE ANNOUNCED');
       if (error) console.log(error);
       console.log(result);
-      const user = new BigNumber(result.returnValues.user).toString(16);
-      const filehash = new BigNumber(result.returnValues.filehash).toString(16);
+      // const user = new BigNumber(result.returnValues.user).toString(16);
+      // const filehash = new BigNumber(result.returnValues.filehash).toString(16);
       const iv = new BigNumber(result.returnValues.iv).toString(16).padStart(32, '0');
       const ciphertext = new BigNumber(result.returnValues.ciphertext).toString(16).padStart(32, '0');
       const pk = [result.returnValues.pk1, result.returnValues.pk2, result.returnValues.pk3, result.returnValues.pk4]
@@ -136,7 +136,7 @@ class ContentArea extends Component {
     this.contract.methods.getBalance(userAddress)
       .call({from: userAddress, gas: '359380'})
       .then(result => {
-        const balance = parseInt(result);
+        const balance = parseInt(result, 10);
         this.setState({userBalance: balance});
       }).catch(error => {
         console.log(error);
@@ -167,7 +167,7 @@ class ContentArea extends Component {
         <br/>
         <p>{'Address: ' + this.state.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
-        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file}></input> //TODO: SET FILE, FILEHASH, AND PAGES STATE
+        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file}></input> {/*TODO: SET FILE, FILEHASH, AND PAGES STATE */ }
         <br/>
         <button onClick={() => this.initiatePrint()}>Initiate Print</button>
       </div>
