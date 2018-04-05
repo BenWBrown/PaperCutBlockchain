@@ -82,6 +82,7 @@ class ContentArea extends Component {
     const fileData = this.state.file;
     sha256(fileData).then(filehash => {
       //send a print request to the smart contract
+      console.log('pub key', this.state.pubKey);
       this.contract.methods.userPrintRequest(filehash).send({from: this.state.userAddress, gas: '359380'}).then(result => {
         console.log('result from user print request', result);
         //send the file to the printer
@@ -89,7 +90,8 @@ class ContentArea extends Component {
           method: 'POST',
           body: JSON.stringify({
             user: this.state.userAddress,
-            file: fileData
+            file: fileData,
+            pubKey: this.state.pubKey,
           }),
           headers: new Headers({ 'Content-type': 'application/json' }),
         });
@@ -124,9 +126,6 @@ class ContentArea extends Component {
       });
   }
 
-  setAddress() {
-
-  }
 
   onAddressChange(e) {
     this.setState({addresstext: e.target.value});

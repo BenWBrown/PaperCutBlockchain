@@ -13,9 +13,11 @@ const printerAddress = "0x5aeda56215b167893e80b4fe645ba6d5bab767de";
 
 const unapprovedFiles = {}; // maps hashes to file data. TODO: use a database on disk
 const approvedFiles = {};
+const pubkeys = {};
 let pc;
 
 const nCrypto = require('native-crypto');
+const EthCrypto = require('eth-crypto');
 
 async function sha256(message) {
 
@@ -35,7 +37,14 @@ let calculateCost = function calculateCost(data) {
 }
 
 let generateOneTimeCode = function(args) {
-  return '0x1234';
+  const userAddress = args.user;
+  const pubKey = pubkeys[userAddress];
+  //TODO: VERIFY THESE MATCH?
+  console.log('\npubkey', pubKey.toString(16));
+  const oneTimeCode = 'hello, world'; //TODO: generate a real one
+  const encryptedPackage = EthCrypto.encryptWithPublicKey(pubKey, oneTimeCode);
+  console.log(encryptedPackage);
+  return encryptedPackage
 }
 
 
@@ -44,7 +53,10 @@ app.get('/', (req, res) => res.send('Hello World!'))
 app.post('/print', (req, res) => {
   // res.send('You are printing yaya');
   sha256(req.body.file).then(filehash => {
-    const user = req.body.user;
+    const user = req.body.user.toLowerCase();
+    const pubKey = req.body.pubKey;
+    pubkeys[user] = pubKey;
+    //TODO: VERIFY THAT USER AND PUBKEY MATCH
     unapprovedFiles[filehash] = req.body.file;
     console.log('file recieved', user, req.body.file);
     const cost = calculateCost(req.body.file);
@@ -66,19 +78,16 @@ app.listen(5555, () => {
     //watch for ApprovePrint events
     pc.ApprovePrint().watch((err, response) => {
       console.log("approve print");
-      console.log(err);
-      console.log(response);
-      const code = generateOneTimeCode(response.args);
-      pc.printerAnnouceCode(response.args.user, response.args.filehash, code);
+      if (!pubkeys[response.args.user]) {
+        console.log('********* early exit *********');
+        return;
+      }
+      generateOneTimeCode(response.args).then(encryptedPackage => {
+        console.log('\nencrypted package', encryptedPackage);
+        //TODO: SEND ENTIRE package
+        pc.printerAnnouceCode(response.args.user, response.args.filehash,'0x' + encryptedPackage.ciphertext);
+      });
     });
-    // pc.Print().watch( (err, response) => {
-    //   if (err) {
-    //     console.log('err:', err);
-    //   } else {
-    //       console.log(response.args.pages.toString());
-    //       console.log(response.args._filehash.toString());
-    //   }
-    // })
   });
 })
 
