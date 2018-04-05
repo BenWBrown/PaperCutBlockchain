@@ -14,7 +14,7 @@ if (typeof web3 !== 'undefined') {
 }
 
 const crypto = window.crypto || window.msCrypto; // for IE 11
-const subtleCrypto = crypto.webkitSubtle || crypto.subtle;
+const subtleCrypto = crypto.subtle;
 
 
 const serverLocation = 'http://localhost:5555/';
