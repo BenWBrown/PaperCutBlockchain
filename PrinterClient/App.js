@@ -35,7 +35,8 @@ async function sha256(message) {
 }
 
 let calculateCost = function calculateCost(data) {
-  return 5;
+  const pcCost = .05;
+  return (pcCost * 1e18).toString();
 }
 
 let generateOneTimeCode = function(args) {
@@ -62,7 +63,6 @@ app.post('/print', (req, res) => {
     unapprovedFiles[filehash] = req.body.file;
     console.log('file recieved', user, req.body.file);
     const cost = calculateCost(req.body.file);
-    console.log(filehash);
 
     pc.printerPrintRequest(user, '0x' + filehash, cost, {from: printerAddress, gas: '359380'});
   }).catch(error => {
