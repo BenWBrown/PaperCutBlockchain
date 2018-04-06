@@ -11,8 +11,8 @@ app.use(bodyParser.json());
 
 const printerAddress = "0x5aeda56215b167893e80b4fe645ba6d5bab767de";
 
-const unapprovedFiles = {}; // maps hashes to file data. TODO: use a database on disk
-const approvedFiles = {};
+const unapprovedFiles = {}; // maps hashes to file data.
+const approvedFiles = {}; //maps OTCs to file data
 const pubkeys = {};
 let pc;
 
@@ -58,8 +58,13 @@ app.post('/print', (req, res) => {
   sha256(req.body.file).then(filehash => {
     const user = req.body.user.toLowerCase();
     const pubKey = req.body.pubKey;
+    if (user !== EthCrypto.addressByPublicKey(pubKey).toLowerCase()) {
+      console.log('Address and pubkey do not match');
+      res.send('Address and pubkey do not match');
+      return;
+    }
     pubkeys[user] = pubKey;
-    //TODO: VERIFY THAT USER AND PUBKEY MATCH
+
     unapprovedFiles[filehash] = req.body.file;
     console.log('file recieved', user, req.body.file);
     const cost = calculateCost(req.body.file);
