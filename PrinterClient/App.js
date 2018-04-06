@@ -40,7 +40,7 @@ let calculateCost = function calculateCost(data) {
 }
 
 let generateOneTimeCode = function generateOneTimeCode(args) {
-  const codeArray = secureRandom(8);
+  const codeArray = secureRandom(1); //TODO: MAKE THIS LARGER
   const oneTimeCode = codeArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
   return oneTimeCode;
 };
