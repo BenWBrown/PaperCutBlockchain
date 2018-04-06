@@ -70,6 +70,27 @@ app.post('/print', (req, res) => {
   })
 });
 
+const onApprovePrint = function onApprovePrint(response) {
+  console.log('Event Recoded', response.event);
+  if (!pubkeys[response.args.user]) {
+    console.log('********* early exit *********');
+    return;
+  }
+  generateOneTimeCode(response.args).then(encryptedPackage => {
+    //TODO: SEND ENTIRE package
+    const iv = '0x' + encryptedPackage.iv;
+    //the first two digits of the pubkey are alway '04' which indicate something to the ethcrypto package
+    const ephemPubKey1 = '0x' + encryptedPackage.ephemPublicKey.substring(2, 34);
+    const ephemPubKey2 = '0x' + encryptedPackage.ephemPublicKey.substring(34, 66);
+    const ephemPubKey3 = '0x' + encryptedPackage.ephemPublicKey.substring(66, 98);
+    const ephemPubKey4 = '0x' + encryptedPackage.ephemPublicKey.substring(98, 130);
+    const ciphertext = '0x' + encryptedPackage.ciphertext;
+    const mac = '0x' + encryptedPackage.mac;
+    pc.printerAnnouceCode(response.args.user, response.args.filehash, iv,
+      ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
+  });
+};
+
 app.listen(5555, () => {
 
   Papercut.deployed().then(instance => {
@@ -77,44 +98,18 @@ app.listen(5555, () => {
     // set up event listener
     pc = instance;
 
-    //watch for ApprovePrint events
-    pc.ApprovePrint().watch((err, response) => {
-      console.log("approve print");
-      if (!pubkeys[response.args.user]) {
-        console.log('********* early exit *********');
+
+    pc.allEvents().watch((err, response) => {
+      if (err) {
+        console.log('error in event', err);
         return;
       }
-      generateOneTimeCode(response.args).then(encryptedPackage => {
-        console.log('\nencrypted package', encryptedPackage);
-        //TODO: SEND ENTIRE package
-        const iv = '0x' + encryptedPackage.iv;
-        //the first two digits of the pubkey are alway '04' which indicate something to the ethcrypto package
-        const ephemPubKey1 = '0x' + encryptedPackage.ephemPublicKey.substring(2, 34);
-        const ephemPubKey2 = '0x' + encryptedPackage.ephemPublicKey.substring(34, 66);
-        const ephemPubKey3 = '0x' + encryptedPackage.ephemPublicKey.substring(66, 98);
-        const ephemPubKey4 = '0x' + encryptedPackage.ephemPublicKey.substring(98, 130);
-        const ciphertext = '0x' + encryptedPackage.ciphertext;
-        const mac = '0x' + encryptedPackage.mac;
-        pc.printerAnnouceCode(response.args.user, response.args.filehash, iv,
-          ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
-      });
+      switch (response.event) {
+        case 'ApprovePrint': onApprovePrint(response); break;
+        default:
+          console.log('Event recorded', response.event);
+      }
     });
-
-    //TODO: WATCH ALL EVENTS
-
-    // pc.NoUserRequest().watch((error, response) => {
-    //   console.log('no matching user request');
-    //   if (error) console.log(error);
-    //   console.log(result);
-    //   //TODO: DO SOMETHING ABOUT THIS
-    // });
-    //
-    // pc.InsufficientFunds().watch((error, response) => {
-    //   console.log('insufficient funds');
-    //   if (error) console.log(error);
-    //   console.log(result);
-    //   //TODO: DO SOMETHING ABOUT THIS
-    // });
   });
 })
 
