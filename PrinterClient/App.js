@@ -39,15 +39,19 @@ let calculateCost = function calculateCost(data) {
   return (pcCost * 1e18).toString();
 }
 
-let generateOneTimeCode = function(args) {
+let generateOneTimeCode = function generateOneTimeCode(args) {
   const codeArray = secureRandom(8);
   const oneTimeCode = codeArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+  return oneTimeCode;
+};
+
+let encryptOneTimeCode = function encryptOneTimeCode(oneTimeCode, args) {
   const userAddress = args.user;
   const pubKey = pubkeys[userAddress];
   //TODO: VERIFY THESE MATCH? pubkey and address
   const encryptedPackage = EthCrypto.encryptWithPublicKey(pubKey, oneTimeCode);
   console.log(encryptedPackage);
-  return encryptedPackage
+  return encryptedPackage;
 }
 
 
@@ -66,6 +70,7 @@ app.post('/print', (req, res) => {
     pubkeys[user] = pubKey;
 
     unapprovedFiles[filehash] = req.body.file;
+    console.log('****stored filehash', filehash);
     console.log('file recieved', user, req.body.file);
     const cost = calculateCost(req.body.file);
 
@@ -75,14 +80,38 @@ app.post('/print', (req, res) => {
   })
 });
 
+
+//this method mimics physically entering an otc into the printer
+//future development: make a UI for the printer
+app.post('/otc', (req, res) => {
+  if (approvedFiles[req.body.otc]) {
+    console.log('\n\n*******Printing File:\n\n', approvedFiles[req.body.otc], '\n\n');
+    approvedFiles[req.body.otc] = undefined;
+    res.send('file printed!');
+  } else {
+    console.log('no file with that otc');
+    res.send('no file with that otc');
+  }
+});
+
 const onApprovePrint = function onApprovePrint(response) {
   console.log('Event Recoded', response.event);
   if (!pubkeys[response.args.user]) {
     console.log('********* early exit *********');
     return;
   }
-  generateOneTimeCode(response.args).then(encryptedPackage => {
-    //TODO: SEND ENTIRE package
+  const filehash = response.args.filehash.toString(16);
+  const filedata = unapprovedFiles[filehash];
+  if (!filedata) {
+    console.log('NO MATCHING FILE DATA FOR THIS FILEHASH');
+    console.log(unapprovedFiles);
+    console.log(filehash);
+    //TODO: send message to smart contract??
+    return;
+  }
+
+  const otc = generateOneTimeCode(response.args);
+  encryptOneTimeCode(otc, response.args).then(encryptedPackage => {
     const iv = '0x' + encryptedPackage.iv;
     //the first two digits of the pubkey are alway '04' which indicate something to the ethcrypto package
     const ephemPubKey1 = '0x' + encryptedPackage.ephemPublicKey.substring(2, 34);
@@ -93,6 +122,9 @@ const onApprovePrint = function onApprovePrint(response) {
     const mac = '0x' + encryptedPackage.mac;
     pc.printerAnnouceCode(response.args.user, response.args.filehash, iv,
       ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
+
+    unapprovedFiles[filehash] = undefined;
+    approvedFiles[otc] = filedata;
   });
 };
 

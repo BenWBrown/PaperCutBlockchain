@@ -49,13 +49,11 @@ class ContentArea extends Component {
       pubKey: '0x0',
       //TODO: have some sort of login?
       userBalance: 0,
-      file: "",
-      // filehash: "0x123456",
+      file: '',
       pages: 3,
+      otc: '',
     }
     this.contract = new web3.eth.Contract(Papercut.abi, contractAddress);
-
-
   }
 
   componentDidMount() {
@@ -152,6 +150,22 @@ class ContentArea extends Component {
       });
   }
 
+  //this function (and associated button) mimic physically entering the OTC in the printer
+  sendOTC() {
+    const request = new Request(serverLocation + 'otc', {
+      method: 'POST',
+      body: JSON.stringify({
+        otc: this.state.otc,
+      }),
+      headers: new Headers({ 'Content-type': 'application/json' }),
+    });
+
+    fetch(request).then(response => {
+      console.log('response from sending otc', response);
+    }).catch(error => {
+      console.log('error sending otc', error);
+    })
+  }
 
   onAddressChange(e) {
     this.setState({addresstext: e.target.value});
@@ -165,6 +179,10 @@ class ContentArea extends Component {
     this.setState({file: e.target.value});
   }
 
+  onOTCChange(e) {
+    this.setState({otc: e.target.value});
+  }
+
 
   render() {
     const balance = this.state.userBalance.toFixed ? (this.state.userBalance / 1e18).toFixed(2) : this.state.userBalance;
@@ -176,9 +194,12 @@ class ContentArea extends Component {
         <br/>
         <p>{'Address: ' + this.state.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
-        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file}></input> {/*TODO: SET FILE, FILEHASH, AND PAGES STATE */ }
-        <br/>
+        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
         <button onClick={() => this.initiatePrint()}>Initiate Print</button>
+        <br/><br/>
+        <p>*** The below button mimics physically entering the OTC into the printer.</p>
+        <input type='text' onChange={(e) => this.onOTCChange(e)} value={this.state.otc} placeholder='One-Time Print Code'></input>
+        <button onClick={() => this.sendOTC()}>Print!</button>
       </div>
     )
   }
