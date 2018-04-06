@@ -60,8 +60,11 @@ class Homepage extends Component {
 
     this.contract.events.ApprovePrint({}, (error, result) => {
       console.log('PRINT APPROVED. UPDATE UI');
-      if (error) console.log(error);
-      console.log(result);
+      if (error) {
+        console.log(error);
+        return;
+      }
+      this.setState({userBalance: parseInt(result.returnValues.userBalance, 10)});
     });
 
     this.contract.events.AnnoucePrintCode({}, (error, result) => {
@@ -165,7 +168,7 @@ class Homepage extends Component {
 
 
   render() {
-    const balance = this.state.userBalance.toFixed ? (this.state.userBalance / 1e18).toFixed(2) : this.state.userBalance;
+    const balance = (this.state.userBalance / 1e18).toFixed(2)
     return(
       <div>
         <p>{'Address: ' + this.props.userAddress}</p>

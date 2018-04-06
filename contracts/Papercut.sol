@@ -10,7 +10,7 @@ contract Papercut {
   /* event Print(address indexed _from, uint8 pages, uint256 indexed _filehash, uint256 userBalance);
   event PrintingCode(address indexed _user, uint64 printcode); */
 
-  event ApprovePrint(address indexed user, uint256 filehash, uint256 cost);
+  event ApprovePrint(address indexed user, uint256 filehash, uint256 cost, uint256 userBalance);
   event AnnoucePrintCode(address indexed user, uint256 filehash, uint256 iv, uint256 pk1, uint256 pk2, uint256 pk3, uint256 pk4, uint256 ciphertext, uint256 mac);
   event InsufficientFunds(address indexed user, uint256 filehash, uint256 userBalance, uint256 cost);
   event  NoUserRequest(address indexed user, uint256 filehash);
@@ -47,7 +47,7 @@ contract Papercut {
     filecosts[filehash] = cost;
     balances[user] -= cost; //decrement their balance
     withheldMoney[user] += cost; //but withhold that money for now, we may give it back if nothing is printed
-    ApprovePrint(user, filehash, cost);
+    ApprovePrint(user, filehash, cost, balances[user]);
   }
 
   function printerAnnouceCode(address user, uint256 filehash, uint256 iv, uint256 pk1, uint256 pk2, uint256 pk3, uint256 pk4, uint256 ciphertext, uint256 mac) public {

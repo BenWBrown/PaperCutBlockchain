@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 // import styled from 'styled-components';  //todo: make this look slighty nicer?
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
-import {BigNumber} from 'bignumber.js';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
