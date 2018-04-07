@@ -98,6 +98,18 @@ class Homepage extends Component {
       console.log(result);
     });
 
+    this.contract.events.NoUserRequest({}, (error, result) => {
+      console.log('NO MATCHING USER REQUEST');
+      if (error) console.log('error', error);
+      console.log(result);
+    });
+
+    this.contract.events.FileNotApproved({}, (error, result) => {
+      console.log('FILE NOT APPROVED');
+      if (error) console.log('error', error);
+      console.log(result);
+    });
+
   }
 
 

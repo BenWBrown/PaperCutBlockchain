@@ -85,21 +85,31 @@ app.post('/print', (req, res) => {
 //future development: make a UI for the printer
 app.post('/otc', (req, res) => {
   if (approvedFiles[req.body.otc]) {
-    console.log('\n\n*******Printing File:\n\n', approvedFiles[req.body.otc], '\n\n');
-    approvedFiles[req.body.otc] = undefined;
-    res.send('file printed!');
+    const user = approvedFiles[req.body.otc].user; //TODO: OBJECT DESTRUCTURING
+    const filehash = approvedFiles[req.body.otc].filehash;
+    const filedata = approvedFiles[req.body.otc].filedata;
+    pc.printerAnnouceFilePrinted(user, '0x' + filehash, {from: printerAddress, gas: '359380'}).then(response => {
+      const event = response.logs.find(log => log.event === 'AnnouceFilePrinted');
+      if (event.args.user === user && event.args.filehash.toString(16) === filehash) {
+        console.log('\n\n*******Printing File:\n\n', approvedFiles[req.body.otc].filedata, '\n\n');
+        approvedFiles[req.body.otc] = undefined;
+        res.send('file printed!');
+      } else {
+        console.log('user or filehash mismatch'); //TODO: not sure what to do here
+      }
+    }).catch(error => console.log('error contacting printerAnnounceFile', error));
   } else {
     console.log('no file with that otc');
     res.send('no file with that otc');
   }
+
+
+
+
+
 });
 
 const onApprovePrint = function onApprovePrint(response) {
-  console.log('Event Recoded', response.event);
-  if (!pubkeys[response.args.user]) {
-    console.log('********* early exit *********');
-    return;
-  }
   const filehash = response.args.filehash.toString(16);
   const filedata = unapprovedFiles[filehash];
   if (!filedata) {
@@ -111,6 +121,7 @@ const onApprovePrint = function onApprovePrint(response) {
   }
 
   const otc = generateOneTimeCode(response.args);
+  const user = response.args.user;
   encryptOneTimeCode(otc, response.args).then(encryptedPackage => {
     const iv = '0x' + encryptedPackage.iv;
     //the first two digits of the pubkey are alway '04' which indicate something to the ethcrypto package
@@ -120,13 +131,22 @@ const onApprovePrint = function onApprovePrint(response) {
     const ephemPubKey4 = '0x' + encryptedPackage.ephemPublicKey.substring(98, 130);
     const ciphertext = '0x' + encryptedPackage.ciphertext;
     const mac = '0x' + encryptedPackage.mac;
-    pc.printerAnnouceCode(response.args.user, response.args.filehash, iv,
+    pc.printerAnnouceCode(user, response.args.filehash, iv,
       ephemPubKey1, ephemPubKey2, ephemPubKey3, ephemPubKey4, ciphertext, mac);
 
     unapprovedFiles[filehash] = undefined;
-    approvedFiles[otc] = filedata;
+    approvedFiles[otc] = {user, filehash, filedata};
   });
 };
+
+const onNoUserRequest = function onNoUserRequest(response) {
+  const filehash = response.args.filehash;
+  unapprovedFiles[filehash] = undefined;
+}
+
+const onFileNotApproved = function onFileNotApproved(response) {
+  console.log('idk what to do here..');
+}
 
 app.listen(5555, () => {
 
@@ -141,10 +161,16 @@ app.listen(5555, () => {
         console.log('error in event', err);
         return;
       }
+      console.log('Event Recoded', response.event);
+      if (!pubkeys[response.args.user]) {
+        console.log('********* early exit *********');
+        return;
+      }
       switch (response.event) {
         case 'ApprovePrint': onApprovePrint(response); break;
-        default:
-          console.log('Event recorded', response.event);
+        case 'NoUserRequest': onNoUserRequest(response); break;
+        case 'FileNotApproved': onFileNotApproved(response); break;
+        default: break;
       }
     });
   });
