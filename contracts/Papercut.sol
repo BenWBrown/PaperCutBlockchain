@@ -23,7 +23,14 @@ contract Papercut {
     balances[tx.origin] = 1 ether * 385; //TODO: REMOVE THIS
   }
 
-  function addValue() public payable {
+  function adminCashOut() public {
+    if (msg.sender != owner) {
+      return;
+    }
+    owner.send(this.balance);
+  }
+
+  function userAddValue() public payable {
     //TODO: query oracle for eth to USD conversion
     balances[msg.sender] +=  msg.value * 385; // 1 eth = $384.68 as of writing this.
   }

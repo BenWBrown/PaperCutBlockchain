@@ -72,7 +72,7 @@ app.post('/print', (req, res) => {
     unapprovedFiles[filehash] = req.body.file;
     console.log('****stored filehash', filehash);
     console.log('file recieved', user, req.body.file);
-    const cost = calculateCost(req.body.file);
+    const cost = calculateCost(req.body.file); //TODO: SEND A RESPONSE WITH DOCUMENT COST
 
     pc.printerPrintRequest(user, '0x' + filehash, cost, {from: printerAddress, gas: '359380'});
   }).catch(error => {
