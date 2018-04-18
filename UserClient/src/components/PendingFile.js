@@ -7,7 +7,9 @@ function PendingFile(props) {
       <p>{props.filename}</p>
       <p>Status: {props.status}</p>
       <p>Cost: {props.cost || ''}</p>
-      <Button onClick={() => props.onCancel()}>Cancel</Button>
+      {props.status === 'Printed' ?
+        <Button onClick={() => props.onRemove()}>Remove</Button> :
+        <Button onClick={() => props.onCancel()}>Cancel</Button>}
     </div>
   )
 }

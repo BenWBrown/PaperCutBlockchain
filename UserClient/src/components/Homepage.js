@@ -109,6 +109,22 @@ class Homepage extends Component {
       })
     });
 
+    this.contract.events.AnnouceFilePrinted({}, (error, result) => {
+      if (error) {
+        console.log('error in announce file printed', error);
+        return;
+      }
+      const filehash = new BigNumber(result.returnValues.filehash).toString(16);
+      const pendingFiles = this.state.pendingFiles;
+      const currentFile = pendingFiles.find(file => file.filehash === filehash);
+      if (currentFile) {
+        currentFile.status = 'Printed';
+        this.setState({pendingFiles});
+      } else {
+        console.log('error finding file');
+      }
+    });
+
     this.contract.events.NoUserRequest({}, (error, result) => {
       console.log('NO USER REQUEST');
       if (error) console.log('error', error);
@@ -216,7 +232,12 @@ class Homepage extends Component {
         <button onClick={() => this.initiatePrint()}>Initiate Print</button>
         <br/><br/>
         <div>
-          {this.state.pendingFiles.map(file => (<PendingFile {...file} key={file.filehash} onCancel={() => console.log('hello, world')} />))}
+          {this.state.pendingFiles.map(file =>
+            (<PendingFile {...file}
+              key={file.filehash}
+              onCancel={() => console.log('cancel')}
+              onRemove={() => console.log('remove')} />)
+          )}
         </div>
         <br/><br/>
         <p>*** The below button mimics physically entering the OTC into the printer.</p>
