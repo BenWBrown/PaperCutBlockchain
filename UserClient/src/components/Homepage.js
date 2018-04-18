@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 // import styled from 'styled-components';  //todo: make this look slighty nicer?
+import PendingFile from './PendingFile';
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
 import {BigNumber} from 'bignumber.js';
@@ -19,6 +20,12 @@ const subtleCrypto = crypto.subtle;
 
 const serverLocation = 'http://localhost:5555/';
 const contractAddress = "0x345ca3e014aaf5dca488057592ee47305d9b3e10"; //TODO: GET THIS OFF THE BLOCKCHAIN SOMEHOW?
+
+const testOffers = [
+  {pc: 100, eth: 1},
+  {pc: 20, eth: 0.3}
+];
+
 
 
 async function sha256(message) {
@@ -49,6 +56,7 @@ class Homepage extends Component {
       file: '',
       pages: 3,
       otc: '',
+      pendingFiles: [],
     }
     this.contract = new web3.eth.Contract(Papercut.abi, contractAddress);
   }
@@ -59,19 +67,27 @@ class Homepage extends Component {
       .then(text => console.log(text));
 
     this.contract.events.ApprovePrint({}, (error, result) => {
-      console.log('PRINT APPROVED. UPDATE UI');
       if (error) {
         console.log(error);
         return;
       }
-      this.setState({userBalance: parseInt(result.returnValues.userBalance, 10)});
+      const filehash = BigNumber(result.returnValues.filehash).toString(16);
+      const cost = parseInt(result.returnValues.cost, 10) / 10e18;
+      const pendingFiles = this.state.pendingFiles;
+      const currentFile = pendingFiles.find(file => file.filehash === filehash);
+      if (currentFile) {
+        currentFile.cost = cost;
+        currentFile.status = 'Approved. Generating one-time code';
+        this.setState({userBalance: parseInt(result.returnValues.userBalance, 10), pendingFiles});
+      }
     });
 
     this.contract.events.AnnoucePrintCode({}, (error, result) => {
-      console.log('PRINT CODE ANNOUNCED');
-      if (error) console.log('error', error);
+      if (error) {
+        console.log('error in announce print code', error);
+      }
       // const user = new BigNumber(result.returnValues.user).toString(16);
-      // const filehash = new BigNumber(result.returnValues.filehash).toString(16);
+      const filehash = new BigNumber(result.returnValues.filehash).toString(16);
       const iv = new BigNumber(result.returnValues.iv).toString(16).padStart(32, '0');
       const ciphertext = new BigNumber(result.returnValues.ciphertext).toString(16).padStart(32, '0');
       const pk = [result.returnValues.pk1, result.returnValues.pk2, result.returnValues.pk3, result.returnValues.pk4]
@@ -80,7 +96,14 @@ class Homepage extends Component {
       const mac = new BigNumber(result.returnValues.mac).toString(16).padStart(64, '0');
       const encryptedPackage = {iv, ephemPublicKey, ciphertext, mac};
       EthCrypto.decryptWithPrivateKey(this.props.privKey, encryptedPackage).then(printCode => {
-        console.log('printcode', printCode);
+        const pendingFiles = this.state.pendingFiles;
+        const currentFile = pendingFiles.find(file => file.filehash === filehash);
+        if (currentFile) {
+          currentFile.status = 'Ready to print with code: ' + printCode;
+          this.setState({pendingFiles});
+        } else {
+          console.log('error finding file');
+        }
       }).catch(e => {
         console.log('error',e);
       })
@@ -117,6 +140,10 @@ class Homepage extends Component {
     //first, hash the file we're sending
     const fileData = this.state.file;
     sha256(fileData).then(filehash => {
+      //add file to pending files
+      const pendingFiles = this.state.pendingFiles;
+      pendingFiles.push({filename: fileData, status:'Requesting', filehash});
+      this.setState({pendingFiles});
       //send a print request to the smart contract
       console.log('pub key', this.props.pubKey);
       this.contract.methods.userPrintRequest(filehash).send({from: this.props.userAddress, gas: '359380'}).then(result => {
@@ -180,13 +207,17 @@ class Homepage extends Component {
 
 
   render() {
-    const balance = (this.state.userBalance / 1e18).toFixed(2)
+    const balance = (this.state.userBalance / 1e18).toFixed(2);
     return(
       <div>
         <p>{'Address: ' + this.props.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
         <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
         <button onClick={() => this.initiatePrint()}>Initiate Print</button>
+        <br/><br/>
+        <div>
+          {this.state.pendingFiles.map(file => (<PendingFile {...file} key={file.filehash} onCancel={() => console.log('hello, world')} />))}
+        </div>
         <br/><br/>
         <p>*** The below button mimics physically entering the OTC into the printer.</p>
         <input type='text' onChange={(e) => this.onOTCChange(e)} value={this.state.otc} placeholder='One-Time Print Code'></input>

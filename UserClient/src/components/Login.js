@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 // import styled from 'styled-components';  //todo: make this look slighty nicer?
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
+import { Button } from 'react-bootstrap';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
@@ -46,7 +47,7 @@ class Login extends Component {
           onChange={(e) => this.onPrivKeyChange(e)}
           value={this.state.privKeyText}>
         </input>
-        <button onClick={() => this.login()}>Set Private Key</button>
+        <Button onClick={() => this.login()}>Set Private Key</Button>
       </div>
     );
   }

@@ -27,7 +27,7 @@ contract Papercut {
     if (msg.sender != owner) {
       return;
     }
-    owner.send(this.balance);
+    owner.transfer(this.balance);
   }
 
   function userAddValue() public payable {
