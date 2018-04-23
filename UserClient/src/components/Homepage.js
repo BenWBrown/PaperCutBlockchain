@@ -4,6 +4,7 @@ import PendingFile from './PendingFile';
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
 import {BigNumber} from 'bignumber.js';
+import { Button } from 'react-bootstrap';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
@@ -229,7 +230,7 @@ class Homepage extends Component {
         <p>{'Address: ' + this.props.userAddress}</p>
         <p>{'Balance: ' +  balance}</p>
         <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
-        <button onClick={() => this.initiatePrint()}>Initiate Print</button>
+        <Button onClick={() => this.initiatePrint()}>Initiate Print</Button>
         <br/><br/>
         <div>
           {this.state.pendingFiles.map(file =>
@@ -242,9 +243,9 @@ class Homepage extends Component {
         <br/><br/>
         <p>*** The below button mimics physically entering the OTC into the printer.</p>
         <input type='text' onChange={(e) => this.onOTCChange(e)} value={this.state.otc} placeholder='One-Time Print Code'></input>
-        <button onClick={() => this.sendOTC()}>Print!</button>
+        <Button onClick={() => this.sendOTC()}>Print!</Button>
         <br/>
-        <button onClick={this.props.logout}>Logout</button>
+        <Button onClick={this.props.logout}>Logout</Button>
       </div>
     )
   }
