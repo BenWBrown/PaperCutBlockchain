@@ -48,8 +48,10 @@ class Homepage extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      //TODO: have some sort of login?
-      userBalance: this.props.startingBalance,
+      // userBalance: this.props.startingBalance,
+      // userWithheldBalance: this.props.startingWithheldBalance,
+      userBalance: '',
+      userWithheldBalance: '',
       file: '',
       pages: 3,
       otc: '',
@@ -64,6 +66,7 @@ class Homepage extends Component {
   componentDidMount() {
     //get current offers
     this.refreshOffers();
+    this.updateBalance();
 
     fetch(serverLocation)
       .then(response => response.text())
@@ -81,7 +84,8 @@ class Homepage extends Component {
       if (currentFile) {
         currentFile.cost = cost;
         currentFile.status = 'Approved. Generating one-time code';
-        this.setState({userBalance: parseInt(result.returnValues.userBalance, 10), pendingFiles});
+        this.updateBalance();
+        this.setState({pendingFiles});
       }
     });
 
@@ -113,6 +117,7 @@ class Homepage extends Component {
     });
 
     this.contract.events.AnnouceFilePrinted({}, (error, result) => {
+      this.updateBalance();
       if (error) {
         console.log('error in announce file printed', error);
         return;
@@ -165,8 +170,11 @@ class Homepage extends Component {
       this.setState({pendingFiles});
       //send a print request to the smart contract
       console.log('pub key', this.props.pubKey);
-      this.contract.methods.userPrintRequest(filehash).send({from: this.props.userAddress, gas: '359380'}).then(result => {
+      this.contract.methods.userPrintRequest(filehash)
+      .send({from: this.props.userAddress, gas: '359380'})
+      .then(result => {
         console.log('result from user print request', result);
+        this.updateBalance();
         //send the file to the printer
         const request = new Request(serverLocation + 'print', {
           method: 'POST',
@@ -191,7 +199,28 @@ class Homepage extends Component {
     }).catch(error => {
       console.log('error hashing data, this should never happen', error);
     });
+  }
 
+  onPrintCancel(filehash) {
+    this.contract.methods.userCancelPrint(filehash)
+      .send({from: this.props.userAddress, gas: '359380'})
+      .then(result => {
+        console.log('cancel request result', result.events);
+        if (result.events.FileCanceled) {
+          let pendingFiles = this.state.pendingFiles;
+          pendingFiles = pendingFiles.filter(file => file.filehash !== filehash); //remove the file with the given filehash
+          this.setState({pendingFiles});
+        } else {
+          console.log('Cannot find file to cancel', result);
+        }
+        this.updateBalance();
+      }).catch(error => console.log(error));
+  }
+
+  onFileRemove(filehash) {
+    let pendingFiles = this.state.pendingFiles;
+    pendingFiles = pendingFiles.filter(file => file.filehash !== filehash); //remove the file with the given filehash
+    this.setState({pendingFiles});
   }
 
   //this function (and associated button) mimic physically entering the OTC in the printer
@@ -236,11 +265,11 @@ class Homepage extends Component {
   makeOffer() {
     const pcAmount = BigNumber(parseFloat(this.state.offerPcAmount) * 1e18).toString(10);
     const ethAmount = BigNumber(parseFloat(this.state.offerEthAmount) * 1e18).toString(10);
-    console.log(pcAmount);
-    console.log(ethAmount);
     this.contract.methods.makeOffer(pcAmount, ethAmount)
       .send({from: this.props.userAddress, gas: '359380'})
       .then(result => {
+        this.updateBalance();
+        this.refreshOffers();
         console.log('result', result)
       }).catch(error => {
         console.log('error', error)
@@ -265,14 +294,28 @@ class Homepage extends Component {
   }
 
 
+  updateBalance() {
+    this.contract.methods.getBalance(this.props.userAddress)
+      .call({from: this.props.userAddress, gas: '359380'})
+      .then(result => {
+        console.log(result);
+        const userBalance = BigNumber(result[0], 10).dividedBy(1e18).toFixed(2);
+        const userWithheldBalance = BigNumber(result[1], 10).dividedBy(1e18).toFixed(2);
+        console.log(userBalance, userWithheldBalance);
+        this.setState({userBalance, userWithheldBalance});
+      })
+  }
+
+
   render() {
-    const balance = (this.state.userBalance / 1e18).toFixed(2);
     return(
+      <div>
+      <p>{'Address: ' + this.props.userAddress}</p>
+      <p>{'Balance: ' +  this.state.userBalance}</p>
+      <p>{'Withheld Balance: ' +  this.state.userWithheldBalance}</p>
       <Tabs defaultActiveKey={1} id="uncontrolled-tab">
         <Tab eventKey={1} title="Print">
           <div>
-            <p>{'Address: ' + this.props.userAddress}</p>
-            <p>{'Balance: ' +  balance}</p>
             <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
             <Button onClick={() => this.initiatePrint()}>Initiate Print</Button>
             <br/><br/>
@@ -280,8 +323,8 @@ class Homepage extends Component {
               {this.state.pendingFiles.map(file =>
                 (<PendingFile {...file}
                   key={file.filehash}
-                  onCancel={() => console.log('cancel')}
-                  onRemove={() => console.log('remove')} />)
+                  onCancel={(filehash) => this.onPrintCancel(filehash)}
+                  onRemove={(filehash) => this.onFileRemove(filehash)} />)
               )}
             </div>
             <br/><br/>
@@ -293,7 +336,6 @@ class Homepage extends Component {
           </div>
         </Tab>
         <Tab eventKey={2} title="Buy and Sell">
-        <h3>Current Offers</h3>
           <div>
             {this.state.offers.map(offer =>
               (<Offer offer={offer}
@@ -310,6 +352,7 @@ class Homepage extends Component {
           <Button onClick={() => this.refreshOffers()}>Refresh</Button>
         </Tab>
       </Tabs>
+      </div>
     )
   }
 

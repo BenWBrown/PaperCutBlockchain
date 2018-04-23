@@ -32,8 +32,9 @@ class Login extends Component {
     this.contract.methods.getBalance(userAddress)  //TODO: HAVE SMART CONTRACT VERIFY ADDRESS
       .call({from: userAddress, gas: '359380'})
       .then(result => {
-        const balance = parseInt(result, 10);
-        this.props.onSuccessfulLogin(this.state.privKeyText, userAddress, pubKey, balance);
+        const balance = parseInt(result[0], 10);
+        const withheldBalance = parseInt(result[1], 10);
+        this.props.onSuccessfulLogin(this.state.privKeyText, userAddress, pubKey, balance, withheldBalance);
       }).catch(error => {
         console.log('Error logging in', error);
       });

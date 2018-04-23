@@ -88,6 +88,7 @@ app.post('/otc', (req, res) => {
     const user = approvedFiles[req.body.otc].user; //TODO: OBJECT DESTRUCTURING
     const filehash = approvedFiles[req.body.otc].filehash;
     const filedata = approvedFiles[req.body.otc].filedata;
+    //TODO: ask permission to print
     pc.printerAnnouceFilePrinted(user, '0x' + filehash, {from: printerAddress, gas: '359380'}).then(response => {
       const event = response.logs.find(log => log.event === 'AnnouceFilePrinted');
       if (event.args.user === user && event.args.filehash.toString(16) === filehash) {

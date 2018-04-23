@@ -10,6 +10,7 @@ const initialState = {
   userAddress: '',
   pubKey: '',
   balance: 0,
+  withheldBalance: 0,
 };
 
 class ContentArea extends Component {
@@ -28,8 +29,8 @@ class ContentArea extends Component {
     const login = (
       <Login
         contractAddress={contractAddress}
-        onSuccessfulLogin={(privKey, userAddress, pubKey, balance) => {
-          this.setState({privKey, userAddress, pubKey, balance,loggedIn: true});
+        onSuccessfulLogin={(privKey, userAddress, pubKey, balance, withheldBalance) => {
+          this.setState({privKey, userAddress, pubKey, balance, withheldBalance, loggedIn: true});
         }}
       />);
     const homepage = (
@@ -38,6 +39,7 @@ class ContentArea extends Component {
         userAddress={this.state.userAddress}
         pubKey={this.state.pubKey}
         startingBalance={this.state.balance}
+        startingWithheldBalance={this.state.withheldBalance}
         logout={() => {this.logout()}}
       />);
     return this.state.loggedIn ? homepage : login;

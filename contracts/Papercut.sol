@@ -16,7 +16,6 @@ contract Papercut {
 
   mapping (address => uint256) balances;
   mapping (address => uint256) withheldMoney;
-  mapping (uint256 => address) fileUsers; //maps filehashes to users
   mapping (address => mapping(uint256 => bool)) userUnapprovedFiles; //maps users to a set of file hashes
   mapping (address => mapping(uint256 => bool)) userApprovedFiles; //maps users to a set of file hashes
   mapping (uint256 => uint256) filecosts;
@@ -31,6 +30,8 @@ contract Papercut {
   event NoUserRequest(address indexed user, uint256 filehash);
   event FileNotApproved(address indexed user, uint256 filehash);
   event AnnouceFilePrinted(address indexed user, uint256 filehash);
+  event CannotFindFile(address indexed user, uint256 filehash);
+  event FileCanceled(address indexed user, uint256 filehash);
 
   function Papercut() public {
     owner = tx.origin;
@@ -53,8 +54,22 @@ contract Papercut {
   /* a user requests that a given file hash be printed
    * they must always call this function before sending the file to the printer */
   function userPrintRequest(uint256 filehash) public {
-    /* fileUsers[filehash] = msg.sender; */
     userUnapprovedFiles[msg.sender][filehash] = true;
+  }
+
+  function userCancelPrint(uint256 filehash) public {
+    if (filecosts[filehash] == 0 ||
+        (userUnapprovedFiles[msg.sender][filehash] && userApprovedFiles[msg.sender][filehash])) {
+      CannotFindFile(msg.sender, filehash);
+      return;
+    }
+    uint256 cost = filecosts[filehash];
+    filecosts[filehash] = 0;
+    userUnapprovedFiles[msg.sender][filehash] = false;
+    userApprovedFiles[msg.sender][filehash] = false;
+    withheldMoney[msg.sender] -= cost;
+    balances[msg.sender] += cost;
+    FileCanceled(msg.sender, filehash);
   }
 
   function printerPrintRequest(address user, uint256 filehash, uint256 cost) public {
@@ -93,8 +108,8 @@ contract Papercut {
     AnnouceFilePrinted(user, filehash);
   }
 
-  function getBalance(address addr) public view returns(uint) {
-    return balances[addr];
+  function getBalance(address addr) public view returns(uint[2]) {
+    return [balances[addr], withheldMoney[addr]];
   }
 
   function getOffers() public view returns(uint[4][]) {
