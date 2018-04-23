@@ -1,12 +1,27 @@
 pragma solidity ^0.4.18;
 
 contract Papercut {
+
+  //web3.js does not yet support solidity tuples/structs
+  //therefore, we'd like to use the below struct to represent an offer, but we must
+  //instead use an array
+  /*
+  struct Offer {
+    uint256 offerNumber;
+    address offerer;
+    uint256 pcAmount;
+    uint256 ethAmount;
+  }
+  */
+
   mapping (address => uint256) balances;
   mapping (address => uint256) withheldMoney;
   mapping (uint256 => address) fileUsers; //maps filehashes to users
   mapping (address => mapping(uint256 => bool)) userUnapprovedFiles; //maps users to a set of file hashes
   mapping (address => mapping(uint256 => bool)) userApprovedFiles; //maps users to a set of file hashes
   mapping (uint256 => uint256) filecosts;
+  uint256[4][] offers; //an array of offers (note this is a dynamic-sized array filled with 4-entry arrays)
+  uint256 nextOffer; //the offer number for the next offer
   address owner;
 
 
@@ -81,4 +96,21 @@ contract Papercut {
   function getBalance(address addr) public view returns(uint) {
     return balances[addr];
   }
+
+  function getOffers() public view returns(uint[4][]) {
+    return offers;
+  }
+
+  //make an offer to sell pcAmount for a given ethAmount
+  function makeOffer(uint256 pcAmount, uint256 ethAmount) public {
+    if (balances[msg.sender] < pcAmount) {
+      return;
+    }
+    balances[msg.sender] -= pcAmount;
+    withheldMoney[msg.sender] += pcAmount;
+    offers.push([nextOffer, uint256(msg.sender), pcAmount, ethAmount]);
+    nextOffer += 1;
+  }
+
+
 }

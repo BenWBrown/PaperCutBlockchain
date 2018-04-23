@@ -222,6 +222,25 @@ class Homepage extends Component {
     this.setState({otc: e.target.value});
   }
 
+  testOffer() {
+    this.contract.methods.makeOffer('200', '300')
+      .send({from: this.props.userAddress, gas: '359380'})
+      .then(result => {
+        console.log(result)
+      }).catch(error => {
+        console.log(error)
+      });
+  }
+
+  getOffers() {
+    console.log('get offers');
+    this.contract.methods.getOffers().call().then(result => console.log(result)).catch(e => console.log('error', e))  //TODO: HAVE SMART CONTRACT VERIFY ADDRESS
+      // .call({from: this.props.userAddress, gas: '359380'})
+      // .then(result => {
+      //   console.log(result);
+      // });
+  }
+
 
   render() {
     const balance = (this.state.userBalance / 1e18).toFixed(2);
@@ -246,6 +265,10 @@ class Homepage extends Component {
         <Button onClick={() => this.sendOTC()}>Print!</Button>
         <br/>
         <Button onClick={this.props.logout}>Logout</Button>
+
+        <br/>
+        <button onClick={() => this.testOffer()}>TEST OFFER</button>
+        <button onClick={() => this.getOffers()}>get offers</button>
       </div>
     )
   }
