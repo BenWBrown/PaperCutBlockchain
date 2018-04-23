@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 // import styled from 'styled-components';  //todo: make this look slighty nicer?
 import PendingFile from './PendingFile';
+import Offer from './Offer';
 import Papercut from '../Papercut.json';
 import EthCrypto from 'eth-crypto';
 import {BigNumber} from 'bignumber.js';
-import { Button } from 'react-bootstrap';
+import { Button, Tabs, Tab } from 'react-bootstrap';
 // import { Drizzle, generateStore } from 'drizzle';
 import Web3 from 'web3';
 let web3;
@@ -21,11 +22,6 @@ const subtleCrypto = crypto.subtle;
 
 const serverLocation = 'http://localhost:5555/';
 const contractAddress = "0x345ca3e014aaf5dca488057592ee47305d9b3e10"; //TODO: GET THIS OFF THE BLOCKCHAIN SOMEHOW?
-
-const testOffers = [
-  {pc: 100, eth: 1},
-  {pc: 20, eth: 0.3}
-];
 
 
 
@@ -58,11 +54,17 @@ class Homepage extends Component {
       pages: 3,
       otc: '',
       pendingFiles: [],
+      offers: [],
+      offerPcAmount: '',
+      offerEthAmount: '',
     }
     this.contract = new web3.eth.Contract(Papercut.abi, contractAddress);
   }
 
   componentDidMount() {
+    //get current offers
+    this.refreshOffers();
+
     fetch(serverLocation)
       .then(response => response.text())
       .then(text => console.log(text));
@@ -209,10 +211,11 @@ class Homepage extends Component {
     })
   }
 
+  //TODO: REFACTOR THESE INTO ONE
+
   onAddressChange(e) {
     this.setState({addresstext: e.target.value});
   }
-
 
   onFileNameChange(e) {
     this.setState({file: e.target.value});
@@ -222,54 +225,91 @@ class Homepage extends Component {
     this.setState({otc: e.target.value});
   }
 
-  testOffer() {
-    this.contract.methods.makeOffer('200', '300')
+  onOfferPcChange(e) {
+    this.setState({offerPcAmount: e.target.value});
+  }
+
+  onOfferEthChange(e) {
+    this.setState({offerEthAmount: e.target.value});
+  }
+
+  makeOffer() {
+    const pcAmount = BigNumber(parseFloat(this.state.offerPcAmount) * 1e18).toString(10);
+    const ethAmount = BigNumber(parseFloat(this.state.offerEthAmount) * 1e18).toString(10);
+    console.log(pcAmount);
+    console.log(ethAmount);
+    this.contract.methods.makeOffer(pcAmount, ethAmount)
       .send({from: this.props.userAddress, gas: '359380'})
       .then(result => {
-        console.log(result)
+        console.log('result', result)
       }).catch(error => {
-        console.log(error)
+        console.log('error', error)
       });
   }
 
-  getOffers() {
-    console.log('get offers');
-    this.contract.methods.getOffers().call().then(result => console.log(result)).catch(e => console.log('error', e))  //TODO: HAVE SMART CONTRACT VERIFY ADDRESS
-      // .call({from: this.props.userAddress, gas: '359380'})
-      // .then(result => {
-      //   console.log(result);
-      // });
+  refreshOffers() {
+    this.contract.methods.getOffers().call()
+      .then(result => {
+        console.log(result);
+        const offers = result.map(offerArr => {
+          return {
+            offerNumber: offerArr[0],
+            seller: BigNumber(offerArr[1]).toString(16),
+            pcAmount: offerArr[2],
+            ethAmount: offerArr[3]
+          }
+        });
+        this.setState({offers});
+      })
+      .catch(e => console.log('error', e));
   }
 
 
   render() {
     const balance = (this.state.userBalance / 1e18).toFixed(2);
     return(
-      <div>
-        <p>{'Address: ' + this.props.userAddress}</p>
-        <p>{'Balance: ' +  balance}</p>
-        <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
-        <Button onClick={() => this.initiatePrint()}>Initiate Print</Button>
-        <br/><br/>
-        <div>
-          {this.state.pendingFiles.map(file =>
-            (<PendingFile {...file}
-              key={file.filehash}
-              onCancel={() => console.log('cancel')}
-              onRemove={() => console.log('remove')} />)
-          )}
-        </div>
-        <br/><br/>
-        <p>*** The below button mimics physically entering the OTC into the printer.</p>
-        <input type='text' onChange={(e) => this.onOTCChange(e)} value={this.state.otc} placeholder='One-Time Print Code'></input>
-        <Button onClick={() => this.sendOTC()}>Print!</Button>
-        <br/>
-        <Button onClick={this.props.logout}>Logout</Button>
-
-        <br/>
-        <button onClick={() => this.testOffer()}>TEST OFFER</button>
-        <button onClick={() => this.getOffers()}>get offers</button>
-      </div>
+      <Tabs defaultActiveKey={1} id="uncontrolled-tab">
+        <Tab eventKey={1} title="Print">
+          <div>
+            <p>{'Address: ' + this.props.userAddress}</p>
+            <p>{'Balance: ' +  balance}</p>
+            <input type='text' onChange={(e) => this.onFileNameChange(e)} value={this.state.file} placeholder='File text'></input>
+            <Button onClick={() => this.initiatePrint()}>Initiate Print</Button>
+            <br/><br/>
+            <div>
+              {this.state.pendingFiles.map(file =>
+                (<PendingFile {...file}
+                  key={file.filehash}
+                  onCancel={() => console.log('cancel')}
+                  onRemove={() => console.log('remove')} />)
+              )}
+            </div>
+            <br/><br/>
+            <p>*** The below button mimics physically entering the OTC into the printer.</p>
+            <input type='text' onChange={(e) => this.onOTCChange(e)} value={this.state.otc} placeholder='One-Time Print Code'></input>
+            <Button onClick={() => this.sendOTC()}>Print!</Button>
+            <br/>
+            <Button onClick={this.props.logout}>Logout</Button>
+          </div>
+        </Tab>
+        <Tab eventKey={2} title="Buy and Sell">
+        <h3>Current Offers</h3>
+          <div>
+            {this.state.offers.map(offer =>
+              (<Offer offer={offer}
+                key={offer.offerNumber}
+                onBuy={(offerNumber) => console.log('buy', offerNumber)} />)
+            )}
+          </div>
+          <br />
+          <p>PaperCut Money to Sell</p>
+          <input type='text' onChange={(e) => this.onOfferPcChange(e)} value={this.state.offerPcAmount}></input>
+          <p>Price (in ETH)</p>
+          <input type='text' onChange={(e) => this.onOfferEthChange(e)} value={this.state.offerEthAmount}></input>
+          <Button onClick={() => this.makeOffer()}>Make Offer</Button>
+          <Button onClick={() => this.refreshOffers()}>Refresh</Button>
+        </Tab>
+      </Tabs>
     )
   }
 
